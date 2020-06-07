@@ -42,20 +42,20 @@ class BaseCallback:
 
 
 
-class CallbackManager:
+class CallbackList:
     def __init__(self, callback_list=None):
         self._callback_list = callback_list if callback_list is not None else []
 
     def get_callback_list(self):
         return self._callback_list
 
-    def callback(self, event, **params):
+    def call(self, event, **params):
         for cb in self._callback_list:
             if cb.is_enabled:
                 getattr(cb, event)(**params)
 
 
-class BaseAgentCallback(BaseCallback):
+class AgentCallback(BaseCallback):
     def set_agent(self, agent, enable=True):
         if hasattr(self, 'agent'):
             raise Exception(f'Callback ({self}) already initialized')
@@ -68,7 +68,7 @@ class BaseAgentCallback(BaseCallback):
         return self._agent_ref()
 
 
-class AgentCallbackManager(CallbackManager):
+class AgentCallbackList(CallbackList):
     def add_callback(self, callback, agent, enable=True):
         callback.set_agent(agent=agent, enable=enable)
         self._callback_list.append(callback)

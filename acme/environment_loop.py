@@ -59,7 +59,7 @@ class EnvironmentLoop(core.Worker):
         self._environment = environment
         self._actor = actor
         logger = logger or loggers.make_default_logger(label)
-        self._callbacks = base.CallbackManager(callback_list=[logger])
+        self._callbacks = base.CallbackList(callback_list=[logger])
 
     def run(self, num_episodes: Optional[int] = None):
         """Perform the run loop.
@@ -80,7 +80,7 @@ class EnvironmentLoop(core.Worker):
 
         for _ in iterator:
             timestep = self._environment.reset()
-            self._callbacks.callback('on_episode_begin', timestep=timestep)
+            self._callbacks.call('on_episode_begin', timestep=timestep)
 
             # Make the first observation.
             self._actor.observe_first(timestep)
@@ -94,8 +94,8 @@ class EnvironmentLoop(core.Worker):
                 # Have the agent observe the timestep and let the actor update itself.
                 self._actor.observe(action, next_timestep=timestep)
                 self._actor.update()
-                self._callbacks.callback('on_feedback', action=action, next_timestep=timestep)
+                self._callbacks.call('on_feedback', action=action, next_timestep=timestep)
 
-            self._callbacks.callback('on_episode_end')
+            self._callbacks.call('on_episode_end')
 
 # Internal class.
