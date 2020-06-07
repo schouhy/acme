@@ -52,15 +52,13 @@ class EnvironmentLoop(core.Worker):
             self,
             environment: dm_env.Environment,
             actor: core.Actor,
-            #counter: counting.Counter = None,
-            logger: loggers.BaseCallbackLogger = None,
-            #label: str = 'environment_loop',
+            logger: loggers.BaseLoggerCallback = None,
+            label: str = 'environment_loop'
     ):
         # Internalize agent and environment.
         self._environment = environment
         self._actor = actor
-        #self._counter = counter or counting.Counter()
-        #self._logger = logger or loggers.make_default_logger(label)
+        logger = logger or loggers.make_default_logger(label)
         self._callbacks = base.CallbackManager(callback_list=[logger])
 
     def run(self, num_episodes: Optional[int] = None):
@@ -99,6 +97,5 @@ class EnvironmentLoop(core.Worker):
                 self._callbacks.callback('on_feedback', action=action, next_timestep=timestep)
 
             self._callbacks.callback('on_episode_end')
-
 
 # Internal class.

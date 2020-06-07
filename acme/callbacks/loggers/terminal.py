@@ -59,7 +59,7 @@ def serialize(values: base.LoggingData) -> str:
                       for k, v in sorted(values.items()))
 
 
-class TerminalLoggerCallback(base.BaseCallbackLogger):
+class TerminalLoggerCallback(base.BaseLoggerCallback):
     """Logs to terminal."""
 
     def __init__(

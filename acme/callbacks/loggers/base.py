@@ -13,10 +13,10 @@ import dm_env
 LoggingData = Mapping[str, Any]
 
 
-class BaseCallbackLogger(base.BaseCallback, abc.ABC):
+class BaseLoggerCallback(base.BaseCallback, abc.ABC):
     def __init__(self):
         self._counter = counting.Counter()
-        super(BaseCallbackLogger, self).__init__()
+        super(BaseLoggerCallback, self).__init__()
 
     """A logger has a `write` method."""
     def on_episode_begin(self, timestep: dm_env.TimeStep):
