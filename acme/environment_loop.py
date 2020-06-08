@@ -17,8 +17,10 @@
 
 import itertools
 import time
+
 from typing import Optional
 
+from acme.agents import agent
 from acme import core
 # Internal imports.
 from acme.utils import counting
@@ -51,7 +53,7 @@ class EnvironmentLoop(core.Worker):
     def __init__(
             self,
             environment: dm_env.Environment,
-            actor: core.Actor,
+            actor: agent.Agent,
             logger: loggers.BaseLoggerCallback = None,
             label: str = 'environment_loop'
     ):
@@ -59,7 +61,8 @@ class EnvironmentLoop(core.Worker):
         self._environment = environment
         self._actor = actor
         logger = logger or loggers.make_default_logger(label)
-        self._callbacks = base.CallbackList(callback_list=[logger])
+        callbacks = [logger] + actor.callback_list
+        self._callbacks = base.CallbackList(callback_list=callbacks)
 
     def run(self, num_episodes: Optional[int] = None):
         """Perform the run loop.

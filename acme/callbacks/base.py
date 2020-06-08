@@ -41,12 +41,12 @@ class BaseCallback:
         pass
 
 
-
 class CallbackList:
     def __init__(self, callback_list=None):
-        self._callback_list = callback_list if callback_list is not None else []
+        self._callback_list = callback_list or []
 
-    def get_callback_list(self):
+    @property
+    def callback_list(self):
         return self._callback_list
 
     def call(self, event, **params):
