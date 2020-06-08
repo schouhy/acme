@@ -43,18 +43,21 @@ class Agent(core.VariableSource):
     [0, 1] in order to allow more steps per update.
     """
 
-    def __init__(self, actor: core.Actor, learner: core.Learner, callbacks=None):
+    def __init__(self, actor: core.Actor, callbacks=None):
         self._actor = actor
-        self._learner = learner
 
-        callbacks = callbacks or []
-        callbacks += [learner, actor]
+        callbacks = callbacks or {}
+        callbacks.update({'actor': actor})
         ## callbacks
-        self._callback_list = base.AgentCallbackList(callbacks)
+        self._callback_list = base.AgentCallbackList(list(callbacks.values()))
+        for name, cb in callbacks.items():
+            cb.set_agent(self)
+            assert not hasattr(self, name)
+            setattr(self, name, cb)
 
     @property
     def callback_list(self):
-        return self._callback_list.callback_list
+        return self._callback_list.callbacks
 
     def select_action(self, observation: types.NestedArray) -> types.NestedArray:
         return self._actor.select_action(observation)

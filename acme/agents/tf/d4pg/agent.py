@@ -172,5 +172,6 @@ class D4PG(agent.Agent):
 
         super().__init__(
             actor=actor,
-            learner=learner,
-            callbacks=[adder])
+            callbacks={'learn': learner, 'adder': adder}
+        )
+
