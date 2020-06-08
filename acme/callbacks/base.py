@@ -58,12 +58,6 @@ class AgentCallback(BaseCallback):
     def agent(self):
         return self._agent_ref()
 
-
-class AgentCallbackList(CallbackList):
-    def add_callback(self, callback, agent, enable=True):
-        callback.set_agent(agent=agent, enable=enable)
-        self._callback_list.append(callback)
-
     def on_set_agent(self, agent):
         pass
 
@@ -72,3 +66,9 @@ class AgentCallbackList(CallbackList):
 
     def after_act(self, action):
         pass
+
+class AgentCallbackList(CallbackList):
+    def add_callback(self, callback, agent, enable=True):
+        callback.set_agent(agent=agent, enable=enable)
+        self._callback_list.append(callback)
+
