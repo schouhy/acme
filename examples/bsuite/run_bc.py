@@ -165,7 +165,7 @@ def main(_):
 
   eval_loop = acme.EnvironmentLoop(
       environment=environment,
-      actor=evaluation_network,
+      agent=evaluation_network,
       counter=counter,
       logger=loggers.TerminalLogger('evaluation', time_delta=1.))
 

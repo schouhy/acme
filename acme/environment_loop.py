@@ -53,15 +53,15 @@ class EnvironmentLoop(core.Worker):
     def __init__(
             self,
             environment: dm_env.Environment,
-            actor: agent.Agent,
+            agent: agent.Agent,
             logger: loggers.BaseLoggerCallback = None,
             label: str = 'environment_loop'
     ):
         # Internalize agent and environment.
         self._environment = environment
-        self._actor = actor
+        self._agent = agent
         logger = logger or loggers.make_default_logger(label)
-        callbacks = [logger] + actor.callback_list
+        callbacks = [logger] + self._agent.callback_list
         self._callbacks = base.CallbackList(callback_list=callbacks)
 
     def run(self, num_episodes: Optional[int] = None):
@@ -86,17 +86,17 @@ class EnvironmentLoop(core.Worker):
             self._callbacks.call('on_episode_begin', timestep=timestep)
 
             # Make the first observation.
-            self._actor.observe_first(timestep)
+            self._agent.observe_first(timestep)
 
             # Run an episode.
             while not timestep.last():
                 # Generate an action from the agent's policy and step the environment.
-                action = self._actor.select_action(timestep.observation)
+                action = self._agent.select_action(timestep.observation)
                 timestep = self._environment.step(action)
 
                 # Have the agent observe the timestep and let the actor update itself.
-                self._actor.observe(action, next_timestep=timestep)
-                self._actor.update()
+                self._agent.observe(action, next_timestep=timestep)
+                self._agent.update()
                 self._callbacks.call('on_feedback', action=action, next_timestep=timestep)
 
             self._callbacks.call('on_episode_end')
