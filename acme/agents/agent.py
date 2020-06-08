@@ -26,7 +26,7 @@ import dm_env
 import numpy as np
 
 
-class Agent(core.Actor, core.VariableSource):
+class Agent(core.VariableSource):
     """Agent class which combines acting and learning.
 
     This provides an implementation of the `Actor` interface which acts and
@@ -43,25 +43,12 @@ class Agent(core.Actor, core.VariableSource):
     [0, 1] in order to allow more steps per update.
     """
 
-    def __init__(self, actor: core.Actor, learner: core.Learner,
-                 min_observations: int, observations_per_step: float, callbacks=None):
+    def __init__(self, actor: core.Actor, learner: core.Learner, callbacks=None):
         self._actor = actor
         self._learner = learner
 
-        # We'll ignore the first min_observations when determining whether to take
-        # a step and we'll do so by making sure num_observations >= 0.
-        self._num_observations = -min_observations
-
-        # Rather than work directly with the observations_per_step ratio we can
-        # figure out how many observations or steps to run per update, one of which
-        # should be one.
-        if observations_per_step >= 1.0:
-            self._observations_per_update = int(observations_per_step)
-            self._steps_per_update = 1
-        else:
-            self._observations_per_update = 1
-            self._steps_per_update = int(1.0 / observations_per_step)
-
+        callbacks = callbacks or []
+        callbacks += [learner, actor]
         ## callbacks
         self._callback_list = base.AgentCallbackList(callbacks)
 
@@ -71,30 +58,6 @@ class Agent(core.Actor, core.VariableSource):
 
     def select_action(self, observation: types.NestedArray) -> types.NestedArray:
         return self._actor.select_action(observation)
-
-    def observe_first(self, timestep: dm_env.TimeStep):
-        self._actor.observe_first(timestep)
-
-    def observe(
-            self,
-            action: types.NestedArray,
-            next_timestep: dm_env.TimeStep,
-    ):
-        self._num_observations += 1
-        self._actor.observe(action, next_timestep)
-
-    def update(self):
-        # Only allow updates after some minimum number of observations have been and
-        # then at some period given by observations_per_update.
-        if (self._num_observations >= 0 and
-                self._num_observations % self._observations_per_update == 0):
-            self._num_observations = 0
-
-            # Run a number of learner steps (usually gradient steps).
-            for _ in range(self._steps_per_update):
-                self._learner.step()
-            # Update actor weights after learner, note in TF this may be a no-op.
-            self._actor.update()
 
     def get_variables(self, names: List[str]) -> List[List[np.ndarray]]:
         return self._learner.get_variables(names)

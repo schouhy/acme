@@ -21,6 +21,7 @@ from acme import types
 # Internal imports.
 from acme.tf import utils as tf2_utils
 from acme.tf import variable_utils as tf2_variable_utils
+from acme.callbacks.actor import ActorCallback
 
 import dm_env
 import sonnet as snt
@@ -31,156 +32,156 @@ import tree
 tfd = tfp.distributions
 
 
-class FeedForwardActor(core.Actor):
-  """A feed-forward actor.
+class FeedForwardActor(ActorCallback):
+    """A feed-forward actor.
 
-  An actor based on a feed-forward policy which takes non-batched observations
-  and outputs non-batched actions. It also allows adding experiences to replay
-  and updating the weights from the policy on the learner.
-  """
-
-  def __init__(
-      self,
-      policy_network: snt.Module,
-      adder: adders.Adder = None,
-      variable_client: tf2_variable_utils.VariableClient = None,
-  ):
-    """Initializes the actor.
-
-    Args:
-      policy_network: the policy to run.
-      adder: the adder object to which allows to add experiences to a
-        dataset/replay buffer.
-      variable_client: object which allows to copy weights from the learner copy
-        of the policy to the actor copy (in case they are separate).
+    An actor based on a feed-forward policy which takes non-batched observations
+    and outputs non-batched actions. It also allows adding experiences to replay
+    and updating the weights from the policy on the learner.
     """
 
-    # Store these for later use.
-    self._adder = adder
-    self._variable_client = variable_client
-    self._policy_network = tf.function(policy_network)
+    def __init__(
+            self,
+            policy_network: snt.Module,
+            adder: adders.Adder = None,
+            variable_client: tf2_variable_utils.VariableClient = None,
+    ):
+        """Initializes the actor.
 
-  def select_action(self, observation: types.NestedArray) -> types.NestedArray:
-    # Add a dummy batch dimension and as a side effect convert numpy to TF.
-    batched_obs = tf2_utils.add_batch_dim(observation)
+        Args:
+          policy_network: the policy to run.
+          adder: the adder object to which allows to add experiences to a
+            dataset/replay buffer.
+          variable_client: object which allows to copy weights from the learner copy
+            of the policy to the actor copy (in case they are separate).
+        """
 
-    # Forward the policy network.
-    policy_output = self._policy_network(batched_obs)
+        # Store these for later use.
+        self._adder = adder
+        self._variable_client = variable_client
+        self._policy_network = tf.function(policy_network)
+        super(FeedForwardActor, self).__init__()
 
-    # If the policy network parameterises a distribution, sample from it.
-    def maybe_sample(output):
-      if isinstance(output, tfd.Distribution):
-        output = output.sample()
-      return output
+    def select_action(self, observation: types.NestedArray) -> types.NestedArray:
+        # Add a dummy batch dimension and as a side effect convert numpy to TF.
+        batched_obs = tf2_utils.add_batch_dim(observation)
 
-    policy_output = tree.map_structure(maybe_sample, policy_output)
+        # Forward the policy network.
+        policy_output = self._policy_network(batched_obs)
 
-    # Convert to numpy and squeeze out the batch dimension.
-    action = tf2_utils.to_numpy_squeeze(policy_output)
+        # If the policy network parameterises a distribution, sample from it.
+        def maybe_sample(output):
+            if isinstance(output, tfd.Distribution):
+                output = output.sample()
+            return output
 
-    return action
+        policy_output = tree.map_structure(maybe_sample, policy_output)
 
-  def observe_first(self, timestep: dm_env.TimeStep):
-    if self._adder:
-      self._adder.add_first(timestep)
+        # Convert to numpy and squeeze out the batch dimension.
+        action = tf2_utils.to_numpy_squeeze(policy_output)
 
-  def observe(
-      self,
-      action: types.NestedArray,
-      next_timestep: dm_env.TimeStep,
-  ):
-    if self._adder:
-      self._adder.add(action, next_timestep)
+        return action
 
-  def update(self):
-    if self._variable_client:
-      self._variable_client.update()
+    def observe_first(self, timestep: dm_env.TimeStep):
+        if self._adder:
+            self._adder.add_first(timestep)
+
+    def observe(
+            self,
+            action: types.NestedArray,
+            next_timestep: dm_env.TimeStep,
+    ):
+        if self._adder:
+            self._adder.add(action, next_timestep)
+
+    def update(self):
+        if self._variable_client:
+            self._variable_client.update()
 
 
 class RecurrentActor(core.Actor):
-  """A recurrent actor.
+    """A recurrent actor.
 
-  An actor based on a recurrent policy which takes non-batched observations and
-  outputs non-batched actions, and keeps track of the recurrent state inside. It
-  also allows adding experiences to replay and updating the weights from the
-  policy on the learner.
-  """
-
-  def __init__(
-      self,
-      policy_network: snt.RNNCore,
-      adder: adders.Adder = None,
-      variable_client: tf2_variable_utils.VariableClient = None,
-  ):
-    """Initializes the actor.
-
-    Args:
-      policy_network: the (recurrent) policy to run.
-      adder: the adder object to which allows to add experiences to a
-        dataset/replay buffer.
-      variable_client: object which allows to copy weights from the learner copy
-        of the policy to the actor copy (in case they are separate).
+    An actor based on a recurrent policy which takes non-batched observations and
+    outputs non-batched actions, and keeps track of the recurrent state inside. It
+    also allows adding experiences to replay and updating the weights from the
+    policy on the learner.
     """
-    # Store these for later use.
-    self._adder = adder
-    self._variable_client = variable_client
-    self._network = policy_network
-    self._state = None
-    self._prev_state = None
 
-    # TODO(b/152382420): Ideally we would call tf.function(network) instead but
-    # this results in an error when using acme RNN snapshots.
-    self._policy = tf.function(policy_network.__call__)
+    def __init__(
+            self,
+            policy_network: snt.RNNCore,
+            adder: adders.Adder = None,
+            variable_client: tf2_variable_utils.VariableClient = None,
+    ):
+        """Initializes the actor.
 
-  def select_action(self, observation: types.NestedArray) -> types.NestedArray:
-    # Add a dummy batch dimension and as a side effect convert numpy to TF.
-    batched_obs = tf2_utils.add_batch_dim(observation)
+        Args:
+          policy_network: the (recurrent) policy to run.
+          adder: the adder object to which allows to add experiences to a
+            dataset/replay buffer.
+          variable_client: object which allows to copy weights from the learner copy
+            of the policy to the actor copy (in case they are separate).
+        """
+        # Store these for later use.
+        self._adder = adder
+        self._variable_client = variable_client
+        self._network = policy_network
+        self._state = None
+        self._prev_state = None
 
-    # Initialize the RNN state if necessary.
-    if self._state is None:
-      self._state = self._network.initial_state(1)
+        # TODO(b/152382420): Ideally we would call tf.function(network) instead but
+        # this results in an error when using acme RNN snapshots.
+        self._policy = tf.function(policy_network.__call__)
 
-    # Forward.
-    policy_output, new_state = self._policy(batched_obs, self._state)
+    def select_action(self, observation: types.NestedArray) -> types.NestedArray:
+        # Add a dummy batch dimension and as a side effect convert numpy to TF.
+        batched_obs = tf2_utils.add_batch_dim(observation)
 
-    # If the policy network parameterises a distribution, sample from it.
-    def maybe_sample(output):
-      if isinstance(output, tfd.Distribution):
-        output = output.sample()
-      return output
+        # Initialize the RNN state if necessary.
+        if self._state is None:
+            self._state = self._network.initial_state(1)
 
-    policy_output = tree.map_structure(maybe_sample, policy_output)
+        # Forward.
+        policy_output, new_state = self._policy(batched_obs, self._state)
 
-    self._prev_state = self._state
-    self._state = new_state
+        # If the policy network parameterises a distribution, sample from it.
+        def maybe_sample(output):
+            if isinstance(output, tfd.Distribution):
+                output = output.sample()
+            return output
 
-    # Convert to numpy and squeeze out the batch dimension.
-    action = tf2_utils.to_numpy_squeeze(policy_output)
+        policy_output = tree.map_structure(maybe_sample, policy_output)
 
-    return action
+        self._prev_state = self._state
+        self._state = new_state
 
-  def observe_first(self, timestep: dm_env.TimeStep):
-    if self._adder:
-      self._adder.add_first(timestep)
+        # Convert to numpy and squeeze out the batch dimension.
+        action = tf2_utils.to_numpy_squeeze(policy_output)
 
-    # Set the state to None so that we re-initialize at the next policy call.
-    self._state = None
+        return action
 
-  def observe(
-      self,
-      action: types.NestedArray,
-      next_timestep: dm_env.TimeStep,
-  ):
-    if not self._adder:
-      return
+    def observe_first(self, timestep: dm_env.TimeStep):
+        if self._adder:
+            self._adder.add_first(timestep)
 
-    numpy_state = tf2_utils.to_numpy_squeeze(self._prev_state)
-    self._adder.add(action, next_timestep, extras=(numpy_state,))
+        # Set the state to None so that we re-initialize at the next policy call.
+        self._state = None
 
-  def update(self):
-    if self._variable_client:
-      self._variable_client.update()
+    def observe(
+            self,
+            action: types.NestedArray,
+            next_timestep: dm_env.TimeStep,
+    ):
+        if not self._adder:
+            return
 
+        numpy_state = tf2_utils.to_numpy_squeeze(self._prev_state)
+        self._adder.add(action, next_timestep, extras=(numpy_state,))
+
+    def update(self):
+        if self._variable_client:
+            self._variable_client.update()
 
 # Internal class 1.
 # Internal class 2.

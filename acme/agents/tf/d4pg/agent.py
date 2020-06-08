@@ -163,6 +163,8 @@ class D4PG(agent.Agent):
             discount=discount,
             target_update_period=target_update_period,
             dataset=dataset,
+            min_observations=max(batch_size, min_replay_size),
+            observations_per_step=float(batch_size) / samples_per_insert,
             counter=counter,
             logger=logger,
             checkpoint=checkpoint,
@@ -171,6 +173,4 @@ class D4PG(agent.Agent):
         super().__init__(
             actor=actor,
             learner=learner,
-            min_observations=max(batch_size, min_replay_size),
-            observations_per_step=float(batch_size) / samples_per_insert,
             callbacks=[adder])

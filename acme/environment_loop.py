@@ -85,9 +85,6 @@ class EnvironmentLoop(core.Worker):
             timestep = self._environment.reset()
             self._callbacks.call('on_episode_begin', timestep=timestep)
 
-            # Make the first observation.
-            self._agent.observe_first(timestep)
-
             # Run an episode.
             while not timestep.last():
                 # Generate an action from the agent's policy and step the environment.
@@ -95,8 +92,6 @@ class EnvironmentLoop(core.Worker):
                 timestep = self._environment.step(action)
 
                 # Have the agent observe the timestep and let the actor update itself.
-                self._agent.observe(action, next_timestep=timestep)
-                self._agent.update()
                 self._callbacks.call('on_feedback', action=action, next_timestep=timestep)
 
             self._callbacks.call('on_episode_end')
