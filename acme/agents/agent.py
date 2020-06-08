@@ -20,6 +20,7 @@ from typing import List
 from acme import core
 from acme import types
 from acme.callbacks import base
+from acme.callbacks.learner import LearnerCallback
 # Internal imports.
 
 import dm_env
@@ -45,15 +46,16 @@ class Agent(core.VariableSource):
 
     def __init__(self, actor: core.Actor, callbacks=None):
         self._actor = actor
-
+        self._learner = None
+        if 'learner' not in callbacks.keys() or not isinstance(callbacks['learner'], LearnerCallback):
+            raise ValueError('`learner` must be passed and must be a LearnerCallback')
         callbacks = callbacks or {}
         callbacks.update({'actor': actor})
         ## callbacks
-        self._callback_list = base.AgentCallbackList(list(callbacks.values()))
+        self._callback_list = base.CallbackList(list(callbacks.values()))
         for name, cb in callbacks.items():
-            cb.set_agent(self)
-            assert not hasattr(self, name)
-            setattr(self, name, cb)
+            attr_name = '_' + name.strip()
+            setattr(self, attr_name, cb)
 
     @property
     def callback_list(self):
