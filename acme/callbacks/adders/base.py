@@ -41,13 +41,13 @@ import dm_env
 
 import abc
 
-from acme.callbacks.base import BaseCallback
+from acme.callbacks.base import AgentCallback
 
 from acme import types
 import dm_env
 
 
-class AdderCallback(abc.ABC, BaseCallback):
+class AdderCallback(abc.ABC, AgentCallback):
     """The Adder interface.
 
     An adder packs together data to send to the replay buffer, and potentially
