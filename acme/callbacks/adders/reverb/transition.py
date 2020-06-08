@@ -24,7 +24,8 @@ import itertools
 
 from typing import Optional
 
-from acme.callbacks.adders.reverb import base, utils
+from acme.callbacks.adders.reverb import base
+from acme.adders.reverb import utils
 
 import numpy as np
 import reverb
