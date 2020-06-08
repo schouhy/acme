@@ -31,15 +31,6 @@ class BaseCallback:
     def on_episode_end(self):
         pass
 
-    def on_set_agent(self, agent):
-        pass
-
-    def before_act(self, observation):
-        pass
-
-    def after_act(self, action):
-        pass
-
 
 class CallbackList:
     def __init__(self, callback_list=None):
@@ -72,3 +63,12 @@ class AgentCallbackList(CallbackList):
     def add_callback(self, callback, agent, enable=True):
         callback.set_agent(agent=agent, enable=enable)
         self._callback_list.append(callback)
+
+    def on_set_agent(self, agent):
+        pass
+
+    def before_act(self, observation):
+        pass
+
+    def after_act(self, action):
+        pass
