@@ -43,21 +43,17 @@ class FeedForwardActor(ActorCallback):
     def __init__(
             self,
             policy_network: snt.Module,
-            adder: adders.Adder = None,
             variable_client: tf2_variable_utils.VariableClient = None,
     ):
         """Initializes the actor.
 
         Args:
           policy_network: the policy to run.
-          adder: the adder object to which allows to add experiences to a
-            dataset/replay buffer.
           variable_client: object which allows to copy weights from the learner copy
             of the policy to the actor copy (in case they are separate).
         """
 
         # Store these for later use.
-        self._adder = adder
         self._variable_client = variable_client
         self._policy_network = tf.function(policy_network)
         super(FeedForwardActor, self).__init__()
@@ -83,16 +79,14 @@ class FeedForwardActor(ActorCallback):
         return action
 
     def observe_first(self, timestep: dm_env.TimeStep):
-        if self._adder:
-            self._adder.add_first(timestep)
+        pass
 
     def observe(
             self,
             action: types.NestedArray,
             next_timestep: dm_env.TimeStep,
     ):
-        if self._adder:
-            self._adder.add(action, next_timestep)
+        pass
 
     def update(self):
         if self._variable_client:
