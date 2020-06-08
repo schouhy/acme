@@ -34,14 +34,14 @@ class BaseCallback:
 
 class CallbackList:
     def __init__(self, callback_list=None):
-        self._callback_list = callback_list or []
+        self._callbacks = callback_list or []
 
     @property
-    def callback_list(self):
-        return self._callback_list
+    def callbacks(self):
+        return self._callbacks
 
     def call(self, event, **params):
-        for cb in self._callback_list:
+        for cb in self._callbacks:
             if cb.is_enabled:
                 getattr(cb, event)(**params)
 
@@ -70,5 +70,5 @@ class AgentCallback(BaseCallback):
 class AgentCallbackList(CallbackList):
     def add_callback(self, callback, agent, enable=True):
         callback.set_agent(agent=agent, enable=enable)
-        self._callback_list.append(callback)
+        self._callbacks.append(callback)
 
