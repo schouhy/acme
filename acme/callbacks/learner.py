@@ -1,13 +1,13 @@
 import abc
 from acme import types
 
-from acme.callbacks.base import AgentCallback
+from acme.callbacks.base import ActorCallback
 from acme import core
 
 import dm_env
 
 
-class LearnerCallback(AgentCallback, core.Learner, abc.ABC):
+class LearnerCallback(ActorCallback, core.Learner, abc.ABC):
     def __init__(self, min_observations: int, observations_per_step: float):
         # We'll ignore the first min_observations when determining whether to take
         # a step and we'll do so by making sure num_observations >= 0.

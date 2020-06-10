@@ -44,31 +44,3 @@ class CallbackList:
         for cb in self._callbacks:
             if cb.is_enabled:
                 getattr(cb, event)(**params)
-
-
-class ActorCallback(BaseCallback):
-    def set_agent(self, actor, enable=True):
-        if hasattr(self, '_actor_ref'):
-            raise Exception(f'Callback ({self}) already initialized')
-        self._actor_ref = weakref.ref(actor)
-        self.on_set_actor(actor)
-        self._is_enabled = enable
-
-    @property
-    def actor(self):
-        return self._actor_ref()
-
-    def on_set_actor(self, actor):
-        pass
-
-    def before_act(self, observation):
-        pass
-
-    def after_act(self, action):
-        pass
-
-class ActorCallbackList(CallbackList):
-    def add_callback(self, callback, agent, enable=True):
-        callback.set_agent(actor=agent, enable=enable)
-        self._callbacks.append(callback)
-
