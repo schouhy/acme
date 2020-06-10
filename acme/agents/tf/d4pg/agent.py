@@ -28,9 +28,12 @@ from acme.tf import networks
 from acme.tf import utils as tf2_utils
 from acme.utils import counting
 from acme.utils import loggers
+
+import numpy as np
 import reverb
 import sonnet as snt
 import tensorflow as tf
+from typing import List
 
 
 # TODO(b/145531941): make the naming of this agent consistent.
@@ -150,7 +153,7 @@ class D4PG(agent.Agent):
         critic_optimizer = snt.optimizers.Adam(learning_rate=1e-4)
 
         # The learner updates the parameters (and initializes them).
-        learner = learning.D4PGLearner(
+        self._learner = learning.D4PGLearner(
             policy_network=policy_network,
             critic_network=critic_network,
             observation_network=observation_network,
@@ -172,6 +175,8 @@ class D4PG(agent.Agent):
 
         super().__init__(
             actor=actor,
-            callbacks={'learn': learner, 'adder': adder}
+            callbacks={'learn': self._learner, 'adder': adder}
         )
 
+    def get_variables(self, names: List[str]) -> List[List[np.ndarray]]:
+        return self._learner.get_variables(names)

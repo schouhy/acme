@@ -14,20 +14,20 @@
 # limitations under the License.
 
 """The base agent interface."""
+import abc
 
 from typing import List
 
 from acme import core
 from acme import types
 from acme.callbacks import base
-from acme.callbacks.learner import LearnerCallback
+
 # Internal imports.
 
-import dm_env
 import numpy as np
 
 
-class Agent(core.VariableSource):
+class Agent:
     """Agent class which combines acting and learning.
 
     This provides an implementation of the `Actor` interface which acts and
@@ -44,27 +44,32 @@ class Agent(core.VariableSource):
     [0, 1] in order to allow more steps per update.
     """
 
-    def __init__(self, actor: core.Actor, callbacks=None):
+    def __init__(self, actor, callbacks):
         self._actor = actor
-        self._learner = None
-        if 'learner' not in callbacks.keys() or not isinstance(callbacks['learner'], LearnerCallback):
-            raise ValueError('`learner` must be passed and must be a LearnerCallback')
-        callbacks = callbacks or {}
-        callbacks.update({'actor': actor})
-        ## callbacks
-        self._callback_list = base.CallbackList(list(callbacks.values()))
+        self._callback_list = self._init_callbacks(callbacks)
+
+    def _init_callbacks(self, callbacks):
+        callback_list = base.CallbackList(list(callbacks.values()))
         for name, cb in callbacks.items():
-            attr_name = '_' + name.strip()
+            attr_name = f'{name}_cb'
+            assert not hasattr(self, attr_name)
             setattr(self, attr_name, cb)
+            cb.set_owner(self)
+        return callback_list
 
     @property
-    def callback_list(self):
+    def callbacks(self):
         return self._callback_list.callbacks
 
     def select_action(self, observation: types.NestedArray) -> types.NestedArray:
-        return self._actor.select_action(observation)
+        self._callback_list.call('before_select_action', observation=observation)
+        action = self._actor.select_action(observation)
+        self._callback_list.call('after_select_action', action=action)
+        return action
 
+    @abc.abstractmethod
     def get_variables(self, names: List[str]) -> List[List[np.ndarray]]:
-        return self._learner.get_variables(names)
+        pass
+        #return self._learner.owner.get_variables(names)
 
 # Internal class.
