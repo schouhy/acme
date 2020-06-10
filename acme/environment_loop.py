@@ -23,7 +23,6 @@ from typing import Optional
 from acme.agents import agent
 from acme import core
 # Internal imports.
-from acme.utils import counting
 from acme.callbacks import loggers
 from acme.callbacks import base
 
@@ -61,7 +60,7 @@ class EnvironmentLoop(core.Worker):
         self._environment = environment
         self._agent = agent
         logger = logger or loggers.make_default_logger(label)
-        callbacks = [logger] + self._agent.callback_list
+        callbacks = [logger] + self._agent.callbacks
         self._callbacks = base.CallbackList(callback_list=callbacks)
 
     def run(self, num_episodes: Optional[int] = None):
