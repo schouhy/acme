@@ -21,6 +21,7 @@ from acme import datasets
 from acme import specs
 from acme import types
 from acme.callbacks.adders import reverb as adders
+
 from acme.agents import agent
 from acme.agents.tf import actors
 from acme.agents.tf.d4pg import learning
@@ -134,9 +135,11 @@ class D4PG(agent.Agent):
         behavior_network = snt.Sequential([
             observation_network,
             policy_network,
-            networks.ClippedGaussian(sigma),
-            networks.ClipToSpec(act_spec),
         ])
+
+        # Noise and Rescale
+        noise_callback = noise.ClippedGaussianCallback(sigma)
+        rescaling_callback = rescaling.ClipToSpec(act_spec)
 
         # Create variables.
         tf2_utils.create_variables(policy_network, [emb_spec])
@@ -175,7 +178,7 @@ class D4PG(agent.Agent):
 
         super().__init__(
             actor=actor,
-            callbacks={'learn': self._learner, 'adder': adder}
+            callbacks={'learn': self._learner, 'adder': adder, 'noise': noise_callback, 'rescale': rescaling_callback}
         )
 
     def get_variables(self, names: List[str]) -> List[List[np.ndarray]]:

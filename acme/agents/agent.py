@@ -51,7 +51,7 @@ class Agent:
     def _init_callbacks(self, callbacks):
         callback_list = base.CallbackList(list(callbacks.values()))
         for name, cb in callbacks.items():
-            attr_name = f'{name}_cb'
+            attr_name = f'_{name}'
             assert not hasattr(self, attr_name)
             setattr(self, attr_name, cb)
             cb.set_owner(self)
@@ -64,7 +64,10 @@ class Agent:
     def select_action(self, observation: types.NestedArray) -> types.NestedArray:
         self._callback_list.call('before_select_action', observation=observation)
         action = self._actor.select_action(observation)
+        # TODO: improve this ugly workaround to make action mutable and let callbacks modify it
+        action = [action]
         self._callback_list.call('after_select_action', action=action)
+        action = action[0]
         return action
 
     @abc.abstractmethod
