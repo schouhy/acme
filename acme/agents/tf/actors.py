@@ -21,7 +21,6 @@ from acme import types
 # Internal imports.
 from acme.tf import utils as tf2_utils
 from acme.tf import variable_utils as tf2_variable_utils
-from acme.callbacks.actor import ActorCallback
 
 import dm_env
 import sonnet as snt
@@ -32,7 +31,7 @@ import tree
 tfd = tfp.distributions
 
 
-class FeedForwardActor(ActorCallback):
+class FeedForwardActor(core.Actor):
     """A feed-forward actor.
 
     An actor based on a feed-forward policy which takes non-batched observations
