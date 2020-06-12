@@ -111,4 +111,8 @@ class AdderCallback(abc.ABC, AgentCallback):
         self.add_first(timestep=timestep)
 
     def on_feedback(self, action: types.NestedArray, next_timestep: dm_env.TimeStep):
-        self.add(action=action, next_timestep=next_timestep)
+        # TODO: solve the access to extras in a better way
+        extras = ()
+        if hasattr(self.owner._actor, '_extras'):
+            extras = self.owner._actor._extras
+        self.add(action=action, next_timestep=next_timestep, extras=extras)

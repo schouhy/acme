@@ -77,15 +77,15 @@ class FeedForwardActor(core.Actor):
 
         return action
 
-    def observe_first(self, timestep: dm_env.TimeStep):
-        pass
-
-    def observe(
-            self,
-            action: types.NestedArray,
-            next_timestep: dm_env.TimeStep,
-    ):
-        pass
+    # def observe_first(self, timestep: dm_env.TimeStep):
+    #     pass
+    #
+    # def observe(
+    #         self,
+    #         action: types.NestedArray,
+    #         next_timestep: dm_env.TimeStep,
+    # ):
+    #     pass
 
     def update(self):
         if self._variable_client:
@@ -104,7 +104,6 @@ class RecurrentActor(core.Actor):
     def __init__(
             self,
             policy_network: snt.RNNCore,
-            adder: adders.Adder = None,
             variable_client: tf2_variable_utils.VariableClient = None,
     ):
         """Initializes the actor.
@@ -117,7 +116,6 @@ class RecurrentActor(core.Actor):
             of the policy to the actor copy (in case they are separate).
         """
         # Store these for later use.
-        self._adder = adder
         self._variable_client = variable_client
         self._network = policy_network
         self._state = None
@@ -147,6 +145,7 @@ class RecurrentActor(core.Actor):
         policy_output = tree.map_structure(maybe_sample, policy_output)
 
         self._prev_state = self._state
+        self._extras = (tf2_utils.to_numpy_squeeze(self._prev_state),)
         self._state = new_state
 
         # Convert to numpy and squeeze out the batch dimension.
@@ -154,23 +153,23 @@ class RecurrentActor(core.Actor):
 
         return action
 
-    def observe_first(self, timestep: dm_env.TimeStep):
-        if self._adder:
-            self._adder.add_first(timestep)
-
-        # Set the state to None so that we re-initialize at the next policy call.
-        self._state = None
-
-    def observe(
-            self,
-            action: types.NestedArray,
-            next_timestep: dm_env.TimeStep,
-    ):
-        if not self._adder:
-            return
-
-        numpy_state = tf2_utils.to_numpy_squeeze(self._prev_state)
-        self._adder.add(action, next_timestep, extras=(numpy_state,))
+    # def observe_first(self, timestep: dm_env.TimeStep):
+    #     if self._adder:
+    #         self._adder.add_first(timestep)
+    #
+    #     # Set the state to None so that we re-initialize at the next policy call.
+    #     self._state = None
+    #
+    # def observe(
+    #         self,
+    #         action: types.NestedArray,
+    #         next_timestep: dm_env.TimeStep,
+    # ):
+    #     if not self._adder:
+    #         return
+    #
+    #     numpy_state = tf2_utils.to_numpy_squeeze(self._prev_state)
+    #     self._adder.add(action, next_timestep, extras=(numpy_state,))
 
     def update(self):
         if self._variable_client:
