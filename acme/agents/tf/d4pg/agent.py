@@ -178,7 +178,12 @@ class D4PG(agent.Agent):
 
         super().__init__(
             actor=actor,
-            callbacks={'learn': self._learner, 'adder': adder, 'noise': noise_callback, 'rescale': rescaling_callback}
+            callbacks={
+                'learn': self._learner,
+                'adder': adder,
+                'noise': noise_callback,
+                'rescale': rescaling_callback
+            }
         )
 
     def get_variables(self, names: List[str]) -> List[List[np.ndarray]]:

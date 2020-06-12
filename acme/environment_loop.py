@@ -20,7 +20,7 @@ import time
 
 from typing import Optional
 
-from acme.agents import agent
+from acme.agents.agent import Agent
 from acme import core
 # Internal imports.
 from acme.callbacks import loggers
@@ -52,7 +52,7 @@ class EnvironmentLoop(core.Worker):
     def __init__(
             self,
             environment: dm_env.Environment,
-            agent: agent.Agent,
+            agent: Agent,
             logger: loggers.BaseLoggerCallback = None,
             label: str = 'environment_loop'
     ):
@@ -82,6 +82,7 @@ class EnvironmentLoop(core.Worker):
 
         for _ in iterator:
             timestep = self._environment.reset()
+
             self._callbacks.call('on_episode_begin', timestep=timestep)
 
             # Run an episode.
@@ -90,7 +91,6 @@ class EnvironmentLoop(core.Worker):
                 action = self._agent.select_action(timestep.observation)
                 timestep = self._environment.step(action)
 
-                # Have the agent observe the timestep and let the actor update itself.
                 self._callbacks.call('on_feedback', action=action, next_timestep=timestep)
 
             self._callbacks.call('on_episode_end')
