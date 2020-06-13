@@ -25,7 +25,9 @@ from acme.callbacks.adders import reverb as adders
 from acme.agents import agent
 from acme.agents.tf import actors
 from acme.agents.tf.d4pg import learning
-from acme.tf import networks
+from acme.callbacks import noise
+from acme.callbacks import rescaling
+
 from acme.tf import utils as tf2_utils
 from acme.utils import counting
 from acme.utils import loggers
