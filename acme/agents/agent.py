@@ -47,6 +47,7 @@ class Agent:
     def __init__(self, actor, callbacks):
         self._actor = actor
         self._callback_list = self._init_callbacks(callbacks)
+        self._action = None
 
     def _init_callbacks(self, callbacks):
         callback_list = base.CallbackList(list(callbacks.values()))
@@ -63,12 +64,9 @@ class Agent:
 
     def select_action(self, observation: types.NestedArray) -> types.NestedArray:
         self._callback_list.call('before_select_action', observation=observation)
-        action = self._actor.select_action(observation)
-        # TODO: improve this ugly workaround to make action mutable and let callbacks modify it
-        action = [action]
-        self._callback_list.call('after_select_action', action=action)
-        action = action[0]
-        return action
+        self._action = self._actor.select_action(observation)
+        self._callback_list.call('after_select_action')
+        return self._action
 
     @abc.abstractmethod
     def get_variables(self, names: List[str]) -> List[List[np.ndarray]]:

@@ -15,6 +15,6 @@ class ClippedGaussianCallback(AgentCallback):
         super().__init__()
         self._noise = tfd.Normal(loc=0., scale=stddev)
 
-    def after_select_action(self, action):
-        action[0] = action[0] + self._noise.sample(action[0].shape)
-        action[0] = tf.clip_by_value(action[0], -1.0, 1.0)
+    def after_select_action(self):
+        self.owner._action +=  self._noise.sample(self.owner._action.shape)
+        #action[0] = tf.clip_by_value(action[0], -1.0, 1.0)

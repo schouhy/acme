@@ -19,8 +19,8 @@ class ClipToSpec(AgentCallback):
     self._min = spec.minimum
     self._max = spec.maximum
 
-  def after_select_action(self, action):
-      action[0] = tf.clip_by_value(action[0], self._min, self._max)
+  def after_select_action(self):
+      self.owner._action = tf.clip_by_value(self.owner._action, self._min, self._max)
 
 
 # class RescaleToSpec(snt.Module):

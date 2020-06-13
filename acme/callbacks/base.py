@@ -55,7 +55,7 @@ class AgentCallback(BaseCallback):
     def before_select_action(self, observation):
         pass
 
-    def after_select_action(self, action):
+    def after_select_action(self):
         pass
 
 
